@@ -1,0 +1,231 @@
+---
+title: "Homework8_SDS 315"
+author:
+  - "Nancy Nakyung Kwak (UT EID: nk24424)"
+  - "GitHub link: https://github.com/nancy1404/sds315_hw8.git"
+date: "`r Sys.Date()`"
+header-includes:
+  - \usepackage{hyperref}
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+---
+
+[Link to My GitHub Repository](https://github.com/nancy1404/sds315_hw8.git) \newpage
+
+# PROBLEM 1: regression warm up
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+creat <- read.csv("creatinine.csv")
+
+model_creat <- lm(creatclear ~ age, data = creat)
+
+round(coef(model_creat),3)
+```
+
+
+## 1A. 
+
+- Simple linear regression is used to model creatinine clearance rate as a function of age. 
+- The fitted model is: **creatclear = 147.813 - 0.620 x age**, and to estimate the expected creatinine rate for a 55-year-old, we can plug 55 into age into the equation, which is **creatclear = 147.813 - 0.620 x 55 = 147.813 - 34.09 = 113.72**. 
+- Therefore, a 55 year old is expected to have a creatinine clearance rate of approximately **113.7 mL/min**. 
+
+
+## 1B.
+
+- The slope of the regression line shows us how creatinine clearance rate changes with age. 
+- Looking at the fitted model: **creatclear = 147.813 - 0.620 x age**, and the slope is **-0.620mL/min per year**, which shows that for each additional year of age, the expected creatinine clearance rate decreases by 0.620 mL/min on average.
+- This demonstrates that kidney function is likely to decline with age. 
+
+
+## 1C.
+
+- The regression equation is $\hat{y} = 147.813 - 0.620 \cdot \mathrm{age}$.
+- Here's the predicted clearance rate for the age group:
+    -   For the 40-year-old:
+    $\hat{y}_{40} = 147.813 - 0.620 \cdot 40 = 147.813 - 24.800 = 123.013$
+    -   For the 60-year-old:
+    $\hat{y}_{60} = 147.813 - 0.620 \cdot 60 = 147.813 - 37.188 = 110.625$
+
+- Residuals (actual - predicted):
+    -   For the 40-year-old:
+    $135 - 123.013 = +11.987$
+    -   For the 60-year-old:
+    $112 - 110.625 = +1.375$
+    
+-   **We can see that 40-year-old has a larger positive residual (comparing 11.99 and 1.38), which shows that the clearance is more above average for their age. We can conclude that the 40 year-old is healthier for their age.**
+
+
+# PROBLEM 2: Modeling disease growth
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(mosaic)
+
+covid <- read_csv("covid.csv")
+```
+
+
+## 2A. Italy
+
+### 1. Fit Model
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+covid_italy <- filter(covid, country == "Italy")
+
+model_italy <- lm(log(deaths) ~ days_since_first_death, data = covid_italy)
+coef(model_italy)
+
+```
+
+### 2. Doubling time
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+growth_rate_italy <- coef(model_italy)[2]
+doubling_time_italy <- log(2) / growth_rate_italy
+
+```
+
+### 3. Bootstrap CI for growth rate
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+boot_italy <- do(1000) * lm(log(deaths) ~ days_since_first_death, data = resample(covid_italy))
+confint_italy <- confint(boot_italy)
+confint_italy
+
+```
+
+### 4. Bootstrap CI for doubling time
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# 1. Get the lower and upper bounds of the bootstrapped CI for the growth rate
+lower_growth <- confint_italy$lower[2]
+upper_growth <- confint_italy$upper[2]
+
+# 2. Compute doubling time CI (note: smaller growth rate => larger doubling time, so reverse order)
+ci_doubling_italy <- c(log(2) / upper_growth, log(2) / lower_growth)
+ci_doubling_italy
+
+
+```
+
+## 2A-WriteUP
+
+- Since we want to model the early spread of COVID-19 happened in Italy, we fit the linear model to the **log of daily death** as a function of days_since_first_death, which fits an **exponential growth model** on the original scale.
+- The estimated **growth rate** of daily deaths in Italy was **0.183** 
+- Then we used 1,000 bootstrap resamples to compute a 95% confidence interval for this growth rate: [0.160, 0.206]. 
+- Using the formula for exponential doubling time, $DT = \frac{\log(2)}{r}$, I computed the estimated **doubling time** is **3.8 days** and the **95% CI for doubling time** is **[3.3, 4.3] days**.
+- We can see that the number of daily COVID-19 deaths during the early pandemic wave in Italy was doubling **approximately every 3 to 4 days**, representing the seriousness and urgency of that time. 
+
+## 2B. Spain
+
+Q. An estimated growth rate and doubling time for Spain, with 95% bootstrapped confidence intervals for
+each.
+
+### 1. Fit Model
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+covid_spain <- filter(covid, country == "Spain")
+
+model_spain <- lm(log(deaths) ~ days_since_first_death, data = covid_spain)
+coef(model_spain)
+
+```
+
+### 2. Doubling Time
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+growth_rate_spain <- coef(model_spain)[2]
+doubling_time_spain <- log(2) / growth_rate_spain
+
+```
+
+### 3. Bootstrap CI for Growth Rate
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+boot_spain <- do(1000) * lm(log(deaths) ~ days_since_first_death, data = resample(covid_spain))
+confint_spain <- confint(boot_spain)
+confint_spain
+
+```
+
+### 4. Bootstrap CI for Doubling Time
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+lower_growth_spain <- confint_spain$lower[2]
+upper_growth_spain <- confint_spain$upper[2]
+
+ci_doubling_spain <- c(log(2) / upper_growth_spain, log(2) / lower_growth_spain)
+ci_doubling_spain
+
+```
+
+## 2B-WriteUP
+
+- I fit a linear model to the log of daily deaths as a function of days_since_first_death to analyze the spread of COVID-19 in the early phase, which fits an exponential growth model on the original scale.
+- The estimated **growth rate** of daily deaths in Spain was **0.276**.
+- The calculated 95% confidence interval for this growth rate using 1,000 bootstrap resamples was **[0.234, 0.315]**.
+- Plugging in the doubling time formula which is $DT = \frac{\log(2)}{r}$, the estimated doubling time was **2.5 days** with a **95% CI of [2.2, 3.0] days**.
+- The number of daily reported deaths was **doubling roughly every 2 to 3 days** during the early spread of COVID 19 in Spain, showing the **faster growth rate** compared to Italy which emphasizes the seriousness on the initial outbreak in Spain. 
+
+## 2C. Line Graph
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+library(ggplot2)
+
+ggplot(covid, aes(x=days_since_first_death, y = deaths, color = country)) +
+  geom_line(size = 1) +
+  labs(
+    title = "Daily Deaths Over Time",
+    x = "Days Since First Death",
+    y = "Reported Daily Deaths",
+    color = "Country"
+  )
+```
+
+- The line graph shows the reported daily deaths as a function of days since the first death for Italy and Spain (with different colors). 
+- Both countries demonstrates the rapid increase in death counts during this early pandemic period, but with Spain showing a little bit faster initial rise. 
+
+
+# PROBLEM 3: price elasticity of demand
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# log-log regression model 
+# loading the data
+
+library(mosaic)
+milk <- read.csv("milk.csv")
+
+milk_model <- lm(log(sales) ~ log(price), data = milk)
+coef(milk_model)
+
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# estimate elasticity or slope
+# slope gives price elasticity of demand here.
+
+elasticity_hat <- coef(milk_model)[2]
+round(elasticity_hat, 3)
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# bootstrap confidence interval 95% CI
+
+boot_milk <- do(1000) * lm(log(sales) ~ log(price), data = resample(milk))
+milk_confint <- confint(boot_milk)
+milk_confint
+
+# only the CI for the elasticity
+milk_elasticity_ci <- milk_confint[2, c("lower", "upper")]
+round(milk_elasticity_ci, 3)
+```
+
+## 3-WriteUP
+
+- For estimating the price elasticity of demand for milk, a power-law model equation is $Q = K \cdot P^\beta$, where $Q$ is quantity demanded, $P$ is price, $\beta$ is price elasticity of demand, $K$ is a constant.
+- The linear equation is therefore: $log(Q) = log(K) + \beta\cdot log(P)$.
+- The estimated elasticity was $\hat{\beta} = -1.619$ which is known from the fitted regression model
+- Then 1,000 bootstrap resamples are done to compute a 95% confidence interval for $\beta$, and we got **[-1.767, -1.451]**
+- Therefore $\beta$ is larger than 1, which means the demands for milk is elastic, showing that a 1% increase in price is associated with a greater than 1% decrease in quantity demanded. It also means that consumers are relatively quite responsive to changes in milk prices. 
